@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LandslideWatch EWS{% endblock %}
+{% block page_title %}Mission Control{% endblock %}
+
+{% block content %}
+<!-- ═══ RISK BANNER ═══ -->
+<div class="risk-banner {{ risk.css_class }} mb-4" id="risk-banner">
+  <div style="font-size:3.5rem;line-height:1">
+    {% if risk.css_class == 'safe' %}🟢
+    {% elif risk.css_class == 'warning' %}🟡
+    {% else %}🔴{% endif %}
+  </div>
+  <div>
+    <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted);letter-spacing:3px;margin-bottom:4px">CURRENT RISK LEVEL</div>
+    <div class="risk-level-text {{ risk.css_class }}" id="risk-text">{{ risk.level }}</div>
+    <div style="font-size:.85rem;color:var(--text-muted);margin-top:4px">
+      {% for r in risk.reasons %}<span>{{ r }}</span>{% if not loop.last %} &nbsp;•&nbsp; {% endif %}{% endfor %}
+    </div>
+  </div>
+  <div class="ms-auto text-end d-none d-md-block">
+    <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-muted)">RISK SCORE</div>
+    <div style="font-family:var(--font-head);font-size:3.5rem;font-weight:700;color:{{ risk.color }}" id="risk-score">{{ risk.score }}/9</div>
+  </div>
+</div>
+
+<!-- ═══ WEATHER ALERT ═══ -->
+{% if alert_msg %}
+<div class="d-flex align-items-center gap-3 mb-4 p-3" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;">
+  <i class="bi bi-cloud-lightning-rain-fill" style="font-size:1.5rem;color:var(--warning)"></i>
+  <span style="font-size:.9rem">{{ alert_msg }}</span>
+</div>
+{% endif %}
+
+<!-- ═══ SENSOR GRID ═══ -->
+<div class="row g-3 mb-4">
+  <!-- Soil Moisture -->
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card-dark position-relative h-100">
+      <i class="bi bi-droplet-half card-icon" style="color:#60a5fa"></i>
+      <div class="card-label">Soil Moisture</div>
+      <div class="card-value" style="color:#60a5fa" id="val-soil">{{ data.SoilMoisture }}<span class="card-unit">%</span></div>
+      <div class="sensor-bar mt-2"><div class="sensor-fill" id="bar-soil" style="width:{{ data.SoilMoisture }}%;background:#60a5fa"></div></div>
+    </div>
+  </div>
+  <!-- Humidity -->
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card-dark position-relative h-100">
+      <i class="bi bi-moisture card-icon" style="color:#818cf8"></i>
+      <div class="card-label">Humidity</div>
+      <div class="card-value" style="color:#818cf8" id="val-hum">{{ data.Humidity }}<span class="card-unit">%</span></div>
+      <div class="sensor-bar mt-2"><div class="sensor-fill" id="bar-hum" style="width:{{ data.Humidity }}%;background:#818cf8"></div></div>
+    </div>
+  </div>
+  <!-- Temperature -->
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card-dark position-relative h-100">
+      <i class="bi bi-thermometer-half card-icon" style="color:#f97316"></i>
+      <div class="card-label">Temperature</div>
+      <div class="card-value" style="color:#f97316" id="val-temp">{{ data.Temperature }}<span class="card-unit">°C</span></div>
+      <div class="sensor-bar mt-2"><div class="sensor-fill" id="bar-temp" style="width:{{ (data.Temperature/50*100)|int }}%;background:#f97316"></div></div>
+    </div>
+  </div>
+  <!-- Tilt -->
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card-dark position-relative h-100">
+      <i class="bi bi-compass card-icon" style="color:#a78bfa"></i>
+      <div class="card-label">Ground Tilt</div>
+      <div class="card-value" style="color:#a78bfa" id="val-tilt">{{ data.Tilt }}<span class="card-unit">°</span></div>
+      <div class="sensor-bar mt-2"><div class="sensor-fill" id="bar-tilt" style="width:{{ (data.Tilt|int / 30 * 100)|int }}%;background:#a78bfa"></div></div>
+    </div>
+  </div>
+  <!-- Rain -->
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card-dark position-relative h-100">
+      <i class="bi bi-cloud-rain card-icon" style="color:#38bdf8"></i>
+      <div class="card-label">Rain Sensor</div>
+      <div class="card-value {% if data.Rain %}text-warning{% else %}text-success{% endif %}" id="val-rain">
+        {{ "ACTIVE" if data.Rain else "CLEAR" }}
+      </div>
+    </div>
+  </div>
+  <!-- Vibration -->
+  <div class="col-6 col-md-4 col-xl-2">
+    <div class="card-dark position-relative h-100">
+      <i class="bi bi-activity card-icon" style="color:#f43f5e"></i>
+      <div class="card-label">Vibration</div>
+      <div class="card-value {% if data.Vibration %}text-danger{% else %}text-success{% endif %}" id="val-vib">
+        {{ "DETECTED" if data.Vibration else "NONE" }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ROW 2: Weather + GPS + History ═══ -->
+<div class="row g-3">
+  <!-- Weather Card -->
+  <div class="col-md-4">
+    <div class="card-dark h-100">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <div class="card-label">Live Weather</div>
+          <div style="font-family:var(--font-head);font-size:1.4rem;font-weight:700">{{ weather.city }}</div>
+        </div>
+        <img src="https://openweathermap.org/img/wn/{{ weather.icon }}@2x.png" width="60" alt="weather icon" style="filter:brightness(1.2)"/>
+      </div>
+      <div class="d-flex gap-4">
+        <div>
+          <div class="card-label">Temp</div>
+          <div style="font-family:var(--font-head);font-size:2rem;font-weight:700;color:#f97316">{{ weather.temp }}°C</div>
+        </div>
+        <div>
+          <div class="card-label">Humidity</div>
+          <div style="font-family:var(--font-head);font-size:2rem;font-weight:700;color:#60a5fa">{{ weather.humidity }}%</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;color:var(--text-muted);font-size:.85rem">{{ weather.description }}</div>
+      <div style="margin-top:6px;color:var(--text-muted);font-size:.8rem">💨 Wind: {{ weather.wind_speed }} m/s</div>
+      {% if weather.alert %}
+      <div class="mt-3 p-2" style="background:rgba(245,158,11,.15);border-radius:6px;font-size:.8rem;color:var(--warning)">{{ weather.alert }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- GPS Card -->
+  <div class="col-md-4">
+    <div class="card-dark h-100">
+      <div class="card-label">📍 Sensor GPS Location</div>
+      <div style="font-family:var(--font-mono);font-size:.85rem;margin:12px 0;color:var(--accent-cyan)">
+        LAT: <span id="val-lat">{{ lat }}</span><br>
+        LON: <span id="val-lon">{{ lon }}</span>
+      </div>
+      <div id="mini-map" style="height:170px;border-radius:8px;border:1px solid var(--border)"></div>
+      <div class="mt-2 text-center">
+        <a href="{{ url_for('map_view.map_view') }}" class="btn btn-sm btn-ews btn-ews-primary">
+          <i class="bi bi-map"></i> Full Map View
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Log -->
+  <div class="col-md-4">
+    <div class="card-dark h-100">
+      <div class="card-label">System Status Log</div>
+      <div id="status-log" style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted);margin-top:10px;max-height:240px;overflow-y:auto;line-height:1.8">
+        <div><span style="color:var(--safe)">✓</span> System initialized</div>
+        <div><span style="color:var(--safe)">✓</span> Firebase connected</div>
+        <div><span style="color:var(--accent-cyan)">◉</span> Polling sensor data...</div>
+      </div>
+      <hr class="divider mt-3 mb-2"/>
+      <div class="card-label">Timestamp</div>
+      <div class="text-mono" style="font-size:.8rem;color:var(--accent-cyan)" id="val-ts">{{ data.Timestamp }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Mini Map
+  const miniMap = L.map('mini-map', {zoomControl:false, attributionControl:false})
+    .setView([{{ lat }}, {{ lon }}], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
+  const miniMarker = L.circleMarker([{{ lat }}, {{ lon }}], {
+    color: '{{ risk.color }}', fillColor: '{{ risk.color }}',
+    fillOpacity: .8, radius: 10
+  }).addTo(miniMap);
+
+  // Real-time polling
+  async function refresh() {
+    try {
+      const res = await fetch('/api/sensor');
+      const { sensor: d, risk: r } = await res.json();
+
+      document.getElementById('val-soil').innerHTML = d.SoilMoisture + '<span class="card-unit">%</span>';
+      document.getElementById('bar-soil').style.width = d.SoilMoisture + '%';
+      document.getElementById('val-hum').innerHTML  = d.Humidity + '<span class="card-unit">%</span>';
+      document.getElementById('bar-hum').style.width  = d.Humidity + '%';
+      document.getElementById('val-temp').innerHTML = d.Temperature + '<span class="card-unit">°C</span>';
+      document.getElementById('bar-temp').style.width = Math.min(d.Temperature/50*100, 100) + '%';
+      document.getElementById('val-tilt').innerHTML = d.Tilt + '<span class="card-unit">°</span>';
+      document.getElementById('bar-tilt').style.width = Math.min(d.Tilt/30*100, 100) + '%';
+      document.getElementById('val-rain').textContent = d.Rain ? 'ACTIVE' : 'CLEAR';
+      document.getElementById('val-rain').className = 'card-value ' + (d.Rain ? 'text-warning' : 'text-success');
+      document.getElementById('val-vib').textContent = d.Vibration ? 'DETECTED' : 'NONE';
+      document.getElementById('val-vib').className = 'card-value ' + (d.Vibration ? 'text-danger' : 'text-success');
+      document.getElementById('val-ts').textContent = d.Timestamp;
+      document.getElementById('val-lat').textContent = d.Latitude;
+      document.getElementById('val-lon').textContent = d.Longitude;
+
+      // Risk banner
+      const banner = document.getElementById('risk-banner');
+      banner.className = 'risk-banner ' + r.css_class + ' mb-4';
+      document.getElementById('risk-text').className = 'risk-level-text ' + r.css_class;
+      document.getElementById('risk-text').textContent = r.level;
+      document.getElementById('risk-score').textContent = r.score + '/9';
+      document.getElementById('risk-score').style.color = r.color;
+
+      // Map
+      if (d.Latitude && d.Longitude) {
+        miniMarker.setLatLng([d.Latitude, d.Longitude]);
+        miniMarker.setStyle({color: r.color, fillColor: r.color});
+      }
+
+      // Log
+      const log = document.getElementById('status-log');
+      const now = new Date().toLocaleTimeString();
+      log.innerHTML += `<div><span style="color:var(--accent-cyan)">↺</span> Refreshed at ${now}</div>`;
+      log.scrollTop = log.scrollHeight;
+
+      document.getElementById('last-update').textContent = 'LAST SYNC: ' + now;
+    } catch(e) {
+      console.error('Poll error:', e);
+    }
+  }
+
+  setInterval(refresh, 5000);
+</script>
+{% endblock %}

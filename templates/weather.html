@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Weather — LandslideWatch EWS{% endblock %}
+{% block page_title %}Weather Intelligence{% endblock %}
+
+{% block content %}
+<!-- Alert Banner -->
+<div class="d-flex gap-3 align-items-center mb-4 p-3"
+     style="background:rgba(0,170,255,.08);border:1px solid rgba(0,170,255,.25);border-radius:10px;">
+  <i class="bi bi-cloud-lightning-rain" style="font-size:2rem;color:var(--accent-cyan)"></i>
+  <div>
+    <div style="font-family:var(--font-mono);font-size:.65rem;color:var(--text-muted);letter-spacing:2px">INTELLIGENT WEATHER ALERT</div>
+    <div style="font-size:.9rem;margin-top:4px">{{ alert }}</div>
+  </div>
+</div>
+
+<!-- Current + Details -->
+<div class="row g-3 mb-4">
+  <div class="col-md-5">
+    <div class="card-dark h-100 text-center" style="padding:32px;">
+      <img src="https://openweathermap.org/img/wn/{{ current.icon }}@4x.png" width="100" style="filter:brightness(1.3)" alt=""/>
+      <div style="font-family:var(--font-head);font-size:4rem;font-weight:700;color:#f97316;line-height:1">
+        {{ current.temp }}°C
+      </div>
+      <div style="font-size:1.1rem;color:var(--text-muted)">{{ current.description }}</div>
+      <div style="font-family:var(--font-head);font-size:1.3rem;margin-top:8px;color:var(--accent-cyan)">{{ current.city }}</div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="row g-3">
+      {% set details = [
+        ("Humidity", current.humidity ~ " %", "bi-moisture", "#818cf8"),
+        ("Wind Speed", current.wind_speed ~ " m/s", "bi-wind", "#38bdf8"),
+        ("Condition", current.description, "bi-cloud", "#60a5fa"),
+        ("Alert Status", current.alert if current.alert else "No Active Alerts", "bi-shield-check", "#22c55e"),
+      ] %}
+      {% for label, val, icon, color in details %}
+      <div class="col-6">
+        <div class="card-dark h-100">
+          <i class="bi {{ icon }} card-icon" style="color:{{ color }}"></i>
+          <div class="card-label">{{ label }}</div>
+          <div style="font-family:var(--font-head);font-size:1.3rem;font-weight:600;color:{{ color }};margin-top:8px">{{ val }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Forecast -->
+<div class="card-dark">
+  <div class="card-label mb-3">5-Day Forecast & Rain Probability</div>
+  <div class="row g-3">
+    {% for day in forecast %}
+    <div class="col">
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:16px;text-align:center;border:1px solid var(--border);">
+        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted)">{{ day.date }}</div>
+        <img src="https://openweathermap.org/img/wn/{{ day.icon }}.png" width="48" style="filter:brightness(1.2)" alt=""/>
+        <div style="font-family:var(--font-head);font-size:1.4rem;font-weight:700;color:#f97316">{{ day.temp|round|int }}°</div>
+        <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">{{ day.description }}</div>
+        <div style="margin-top:8px">
+          <div style="background:rgba(255,255,255,.06);border-radius:4px;height:4px;">
+            <div style="width:{{ day.pop }}%;background:{% if day.pop > 60 %}#ef4444{% elif day.pop > 30 %}#f59e0b{% else %}#22c55e{% endif %};height:4px;border-radius:4px;"></div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:.65rem;color:{% if day.pop > 60 %}#ef4444{% elif day.pop > 30 %}#f59e0b{% else %}#22c55e{% endif %};margin-top:2px">
+            {{ day.pop }}% rain
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Landslide-Weather correlation -->
+<div class="row g-3 mt-2">
+  <div class="col-12">
+    <div class="card-dark">
+      <div class="card-label mb-3">Landslide-Weather Correlation Guide</div>
+      <div class="row g-3">
+        {% set tips = [
+          ("🌧️ Rain > 50mm/day", "HIGH", "#ef4444", "Immediately check soil moisture and tilt sensors. Issue early warnings."),
+          ("💧 Sustained rain > 3 days", "ELEVATED", "#f59e0b", "Soil saturation likely. Increase monitoring frequency."),
+          ("🌡️ Temp drops + rain", "MODERATE", "#f59e0b", "Indicates potential weather system. Monitor forecasts closely."),
+          ("☀️ Dry, sunny, no rain", "LOW", "#22c55e", "Favorable conditions. Continue routine monitoring."),
+        ] %}
+        {% for trigger, risk, color, action in tips %}
+        <div class="col-md-3">
+          <div style="border-left:3px solid {{ color }};padding-left:12px;">
+            <div style="font-size:.85rem;font-weight:600">{{ trigger }}</div>
+            <div style="font-family:var(--font-mono);font-size:.65rem;color:{{ color }};margin:4px 0">RISK: {{ risk }}</div>
+            <div style="font-size:.8rem;color:var(--text-muted)">{{ action }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

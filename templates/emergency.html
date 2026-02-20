@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Emergency Help — LandslideWatch EWS{% endblock %}
+{% block page_title %}Emergency Help Center{% endblock %}
+
+{% block extra_head %}
+<style>
+  .contact-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 20px; display: flex;
+    align-items: center; justify-content: space-between;
+    transition: all .2s;
+  }
+  .contact-card:hover { border-color: rgba(239,68,68,.4); background: rgba(239,68,68,.04); }
+  .contact-number {
+    font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700;
+    color: #ef4444; letter-spacing: 3px;
+  }
+  .step-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; display: flex; gap: 16px;
+    align-items: flex-start;
+  }
+  .step-num {
+    font-family: var(--font-head); font-size: 2rem; font-weight: 700;
+    color: var(--accent-cyan); opacity: .4; line-height: 1; flex-shrink: 0;
+  }
+  .badge-type {
+    font-family: var(--font-mono); font-size: .65rem; letter-spacing: 1px;
+    padding: 3px 10px; border-radius: 20px; text-transform: uppercase;
+  }
+  .badge-national { background: rgba(239,68,68,.15); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+  .badge-state    { background: rgba(245,158,11,.15); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+  .badge-local    { background: rgba(0,170,255,.15);  color: #00aaff; border: 1px solid rgba(0,170,255,.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- SOS Banner -->
+<div class="text-center mb-4 p-4" style="background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.05));border:2px solid rgba(239,68,68,.4);border-radius:16px;">
+  <div style="font-size:3rem">🚨</div>
+  <div style="font-family:var(--font-head);font-size:2rem;font-weight:700;letter-spacing:3px;color:#ef4444">IN AN EMERGENCY — CALL 112</div>
+  <div style="color:var(--text-muted)">India National Emergency Number — Available 24/7</div>
+</div>
+
+<div class="row g-4">
+  <!-- Contacts -->
+  <div class="col-md-6">
+    <div class="card-label mb-3">Emergency Contact Numbers</div>
+    <div class="d-flex flex-column gap-2">
+      {% for c in contacts %}
+      <div class="contact-card">
+        <div>
+          <div style="font-weight:600;font-size:.95rem">{{ c.name }}</div>
+          <span class="badge-type badge-{{ c.type | lower }}">{{ c.type }}</span>
+        </div>
+        <a href="tel:{{ c.number }}" style="text-decoration:none">
+          <div class="contact-number">{{ c.number }}</div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Steps -->
+  <div class="col-md-6">
+    <div class="card-label mb-3">What To Do During a Landslide</div>
+    <div class="d-flex flex-column gap-2">
+      {% set steps = [
+        ("EVACUATE IMMEDIATELY", "Don't wait for confirmation. If you hear rumbling or see cracks, leave now. Move to higher ground away from slopes."),
+        ("CALL FOR HELP", "Dial 112 or local disaster management. Inform your exact location and number of people."),
+        ("AVOID VALLEYS", "Do not take shelter in valleys, drainage channels, or low-lying areas. Debris flows follow waterways."),
+        ("STAY OFF ROADS", "Avoid roads near the slide. Bridges and roads may be compromised. Landslides can block routes suddenly."),
+        ("HELP OTHERS", "After reaching safety, alert neighbors, especially the elderly and disabled. Do not re-enter danger zones."),
+        ("WAIT FOR CLEARANCE", "Return home only after official safety clearance. Watch for secondary slides."),
+      ] %}
+      {% for title, desc in steps %}
+      <div class="step-card">
+        <div class="step-num">{{ loop.index }}</div>
+        <div>
+          <div style="font-family:var(--font-head);font-weight:700;font-size:.9rem;letter-spacing:1px;text-transform:uppercase;color:var(--accent-cyan)">{{ title }}</div>
+          <div style="font-size:.85rem;color:var(--text-muted);margin-top:4px">{{ desc }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Evacuation Tips -->
+  <div class="col-12">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card-dark">
+          <div style="font-size:2rem;margin-bottom:8px">🎒</div>
+          <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;letter-spacing:1px;text-transform:uppercase;color:var(--warning)">Emergency Kit</div>
+          <ul style="font-size:.85rem;color:var(--text-muted);margin-top:10px;padding-left:16px;line-height:2">
+            <li>Water (3 days supply)</li>
+            <li>Non-perishable food</li>
+            <li>First aid kit</li>
+            <li>Torch & batteries</li>
+            <li>Important documents</li>
+            <li>Whistle & mirror for signaling</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card-dark">
+          <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+          <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;letter-spacing:1px;text-transform:uppercase;color:var(--danger)">Warning Signs</div>
+          <ul style="font-size:.85rem;color:var(--text-muted);margin-top:10px;padding-left:16px;line-height:2">
+            <li>Cracks in ground or walls</li>
+            <li>Trees tilting suddenly</li>
+            <li>Unusual water flow/color</li>
+            <li>Rumbling or cracking sounds</li>
+            <li>Doors/windows jamming</li>
+            <li>Springs appearing in new places</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card-dark">
+          <div style="font-size:2rem;margin-bottom:8px">🏥</div>
+          <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;letter-spacing:1px;text-transform:uppercase;color:var(--safe)">Nearest Hospitals</div>
+          <div style="font-size:.85rem;color:var(--text-muted);margin-top:10px;line-height:2">
+            <div>🏥 Government Medical College, Kozhikode</div>
+            <div>📞 0495-2350211</div>
+            <hr class="divider"/>
+            <div>🏥 MIMS Hospital, Kozhikode</div>
+            <div>📞 0495-2744000</div>
+            <hr class="divider"/>
+            <div>🏥 Baby Memorial Hospital</div>
+            <div>📞 0495-2723272</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Report Incident — LandslideWatch EWS{% endblock %}
+{% block page_title %}Incident Reporting{% endblock %}
+
+{% block extra_head %}
+<style>
+  #report-map { height: 300px; border-radius: 10px; border: 1px solid var(--border); }
+  .form-control, .form-select {
+    background: var(--bg-card) !important; border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important; border-radius: 8px;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: var(--accent-cyan) !important;
+    box-shadow: 0 0 0 3px rgba(0,229,255,.15) !important;
+  }
+  .form-label { font-family: var(--font-mono); font-size: .7rem; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; }
+  .severity-btn { cursor: pointer; padding: 8px 20px; border-radius: 8px; font-family: var(--font-head); letter-spacing: 1px; text-transform: uppercase; font-size: .85rem; border: 2px solid transparent; transition: all .2s; background: var(--bg-card); color: var(--text-muted); }
+  .severity-btn.sel-low    { border-color: #22c55e; color: #22c55e; background: rgba(34,197,94,.1); }
+  .severity-btn.sel-medium { border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,.1); }
+  .severity-btn.sel-high   { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,.1); }
+  .report-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; margin-bottom: 10px;
+    border-left-width: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- FORM -->
+  <div class="col-md-6">
+    <div class="card-dark">
+      <div class="card-label mb-3">Submit Field Incident Report</div>
+      <form action="{{ url_for('report.submit_report') }}" method="POST">
+
+        <div class="mb-3">
+          <label class="form-label">Incident Type</label>
+          <select class="form-select" name="type" required>
+            <option value="crack">🪨 Ground Crack</option>
+            <option value="minor_landslide">⛰️ Minor Landslide</option>
+            <option value="major_landslide">🚨 Major Landslide</option>
+            <option value="road_damage">🛣️ Road/Infrastructure Damage</option>
+            <option value="water_flow">💧 Unusual Water Flow</option>
+            <option value="tree_fall">🌳 Tree Fall / Debris</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Severity Level</label>
+          <div class="d-flex gap-2 mt-1">
+            <label><input type="radio" name="severity" value="low" class="d-none sev-radio" checked/>
+              <span class="severity-btn sel-low" onclick="setSev(this,'sel-low')">Low</span></label>
+            <label><input type="radio" name="severity" value="medium" class="d-none sev-radio"/>
+              <span class="severity-btn" onclick="setSev(this,'sel-medium')">Medium</span></label>
+            <label><input type="radio" name="severity" value="high" class="d-none sev-radio"/>
+              <span class="severity-btn" onclick="setSev(this,'sel-high')">High</span></label>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" name="description" rows="3"
+            placeholder="Describe what you observed..."></textarea>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label">Latitude</label>
+            <input type="text" class="form-control" name="latitude" id="inp-lat"
+              placeholder="Click map to fill" readonly/>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Longitude</label>
+            <input type="text" class="form-control" name="longitude" id="inp-lon"
+              placeholder="Click map to fill" readonly/>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Select Location on Map</label>
+          <div id="report-map"></div>
+          <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px">Click on the map to set incident location. Or use "My Location" button.</div>
+          <button type="button" class="btn btn-sm btn-ews btn-ews-primary mt-2" onclick="locateMe()">
+            🧭 Use My Location
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Contact Number (Optional)</label>
+          <input type="text" class="form-control" name="contact" placeholder="+91 9xxxxxxxxx"/>
+        </div>
+
+        <button type="submit" class="btn btn-ews btn-ews-danger w-100" style="padding:12px">
+          <i class="bi bi-exclamation-triangle-fill"></i> SUBMIT INCIDENT REPORT
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- REPORTS LIST -->
+  <div class="col-md-6">
+    <div class="card-label mb-2">Recent Community Reports</div>
+    {% if reports %}
+      {% for r in reports | sort(attribute='timestamp', reverse=True) %}
+      {% set colors = {'low': '#22c55e', 'medium': '#f59e0b', 'high': '#ef4444'} %}
+      <div class="report-card" style="border-left-color: {{ colors.get(r.severity, '#60a5fa') }}">
+        <div class="d-flex justify-content-between">
+          <span style="font-family:var(--font-head);font-weight:600;font-size:.95rem">{{ r.type | replace('_', ' ') | title }}</span>
+          <span style="font-family:var(--font-mono);font-size:.7rem;color:{{ colors.get(r.severity, '#60a5fa') }};text-transform:uppercase">{{ r.severity }}</span>
+        </div>
+        <div style="font-size:.85rem;color:var(--text-muted);margin-top:4px">{{ r.description }}</div>
+        <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted);margin-top:6px">
+          📍 {{ r.latitude }}, {{ r.longitude }} &nbsp;|&nbsp; 🕒 {{ r.timestamp }}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="card-dark text-center" style="padding:32px;color:var(--text-muted)">
+        <i class="bi bi-check-circle" style="font-size:2rem;color:var(--safe)"></i>
+        <div class="mt-2">No reports filed yet.<br>Your community is safe.</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const rmap = L.map('report-map').setView([11.2588, 75.7804], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(rmap);
+  let pin = null;
+
+  rmap.on('click', e => {
+    if (pin) rmap.removeLayer(pin);
+    pin = L.marker(e.latlng).addTo(rmap);
+    document.getElementById('inp-lat').value = e.latlng.lat.toFixed(6);
+    document.getElementById('inp-lon').value = e.latlng.lng.toFixed(6);
+  });
+
+  function locateMe() {
+    rmap.locate({ setView: true, maxZoom: 15 });
+  }
+  rmap.on('locationfound', e => {
+    if (pin) rmap.removeLayer(pin);
+    pin = L.marker(e.latlng).addTo(rmap);
+    document.getElementById('inp-lat').value = e.latlng.lat.toFixed(6);
+    document.getElementById('inp-lon').value = e.latlng.lng.toFixed(6);
+  });
+
+  function setSev(el, cls) {
+    document.querySelectorAll('.severity-btn').forEach(b => b.className = 'severity-btn');
+    el.classList.add(cls);
+  }
+</script>
+{% endblock %}

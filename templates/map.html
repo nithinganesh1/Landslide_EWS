@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Live Map — LandslideWatch EWS{% endblock %}
+{% block page_title %}Live Threat Map{% endblock %}
+
+{% block extra_head %}
+<style>
+  #main-map { height: calc(100vh - 200px); min-height: 500px; border-radius: 12px; border: 1px solid var(--border); }
+  .map-controls {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .map-btn {
+    font-family: var(--font-head); font-size: .75rem; letter-spacing: 1px;
+    text-transform: uppercase; padding: 6px 14px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg-card);
+    color: var(--text-primary); cursor: pointer; transition: all .2s;
+  }
+  .map-btn:hover, .map-btn.active { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+  .legend-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; font-size: .8rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .leaflet-popup-content-wrapper {
+    background: #0a1a2e !important; border: 1px solid #1a3a5c !important;
+    color: #e2f0ff !important; border-radius: 8px !important;
+  }
+  .leaflet-popup-tip { background: #0a1a2e !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-12">
+    <!-- Controls -->
+    <div class="map-controls">
+      <button class="map-btn active" onclick="toggleLayer('sensor')">📍 Sensor</button>
+      <button class="map-btn active" onclick="toggleLayer('risk')">⭕ Risk Zone</button>
+      <button class="map-btn" onclick="toggleLayer('shelters')">🏠 Shelters</button>
+      <button class="map-btn" onclick="locateUser()">🧭 My Location</button>
+      <button class="map-btn" onclick="getEvacRoute()">🛣️ Evacuation Route</button>
+      <button class="map-btn" onclick="toggleLayer('reports')">⚠️ Reports</button>
+    </div>
+    <div id="main-map"></div>
+  </div>
+  <div class="col-md-8">
+    <div class="legend-box">
+      <div style="font-family:var(--font-mono);font-size:.65rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px">MAP LEGEND</div>
+      <div class="d-flex flex-wrap gap-4">
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> High Risk Zone</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Warning Zone</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Safe Zone / Sensor</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00aaff"></div> Evacuation Shelter</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div> User Report</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card-dark text-center">
+      <div class="card-label">Sensor Coordinates</div>
+      <div class="text-mono mt-2" style="font-size:.85rem;color:var(--accent-cyan)">
+        {{ lat }}° N, {{ lon }}° E
+      </div>
+      <div class="mt-2" style="font-size:.85rem">
+        Risk: <span style="color:{{ risk.color }};font-weight:700;font-family:var(--font-head)">{{ risk.level }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const LAT = {{ lat }};
+const LON = {{ lon }};
+const RISK_COLOR = "{{ risk.color }}";
+const RISK_CSS   = "{{ risk.css_class }}";
+const ORS_KEY    = "{{ config['ORS_API_KEY'] if config else '5b3ce3597851110001cf6248YOUR_KEY' }}";
+
+const reports = {{ reports | tojson }};
+
+// ── Map init ──
+const map = L.map('main-map').setView([LAT, LON], 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// ── Layers ──
+const layers = {};
+
+// Sensor marker
+layers.sensor = L.layerGroup([
+  L.circleMarker([LAT, LON], {
+    color: RISK_COLOR, fillColor: RISK_COLOR,
+    fillOpacity: .85, radius: 12, weight: 3
+  }).bindPopup(`<b>📡 Sensor Node</b><br>Lat: ${LAT}<br>Lon: ${LON}<br>Risk: <b style="color:${RISK_COLOR}">${RISK_CSS.toUpperCase()}</b>`)
+]).addTo(map);
+
+// Risk zone
+const riskRadius = {'safe': 300, 'warning': 600, 'danger': 1000}[RISK_CSS] || 500;
+layers.risk = L.layerGroup([
+  L.circle([LAT, LON], {
+    radius: riskRadius, color: RISK_COLOR,
+    fillColor: RISK_COLOR, fillOpacity: 0.12, dashArray: '8 4'
+  }).bindPopup(`⚠️ Risk Zone — ${riskRadius}m radius`)
+]).addTo(map);
+
+// Mock shelters (replace with Nominatim query for real data)
+const shelters = [
+  { lat: LAT + 0.02, lon: LON + 0.01, name: "Government Higher Secondary School" },
+  { lat: LAT - 0.015, lon: LON + 0.02, name: "Community Health Centre" },
+  { lat: LAT + 0.01, lon: LON - 0.025, name: "District Sports Stadium" },
+];
+layers.shelters = L.layerGroup(
+  shelters.map(s =>
+    L.marker([s.lat, s.lon], {
+      icon: L.divIcon({
+        className: '', html: '<div style="background:#00aaff;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;white-space:nowrap;font-family:Rajdhani,sans-serif;font-weight:700">🏠 Shelter</div>',
+        iconAnchor: [30, 10]
+      })
+    }).bindPopup(`<b>🏠 ${s.name}</b><br>Evacuation Shelter`)
+  )
+);
+
+// User reports
+layers.reports = L.layerGroup(
+  reports.map(r =>
+    L.circleMarker([r.latitude || LAT, r.longitude || LON], {
+      color: '#818cf8', fillColor: '#818cf8', fillOpacity: .8, radius: 8
+    }).bindPopup(`<b>⚠️ ${r.type}</b><br>${r.description}<br><small>Severity: ${r.severity}</small>`)
+  )
+);
+
+// ── Toggle ──
+function toggleLayer(name) {
+  if (!layers[name]) return;
+  if (map.hasLayer(layers[name])) {
+    map.removeLayer(layers[name]);
+  } else {
+    map.addLayer(layers[name]);
+  }
+}
+
+// ── User location ──
+let userMarker = null;
+function locateUser() {
+  map.locate({ setView: true, maxZoom: 15 });
+}
+map.on('locationfound', e => {
+  if (userMarker) map.removeLayer(userMarker);
+  userMarker = L.circleMarker(e.latlng, {
+    color: '#00e5ff', fillColor: '#00e5ff', fillOpacity: .9, radius: 10
+  }).bindPopup('📍 Your Location').addTo(map).openPopup();
+});
+map.on('locationerror', () => alert('Location access denied.'));
+
+// ── Evacuation route via ORS ──
+let routeLayer = null;
+function getEvacRoute() {
+  if (!userMarker) { alert('Click "My Location" first.'); return; }
+  const from = userMarker.getLatLng();
+  const to   = { lat: shelters[0].lat, lng: shelters[0].lon };
+
+  fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
+    method: 'POST',
+    headers: { 'Authorization': ORS_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coordinates: [[from.lng, from.lat], [to.lng, to.lat]] })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (routeLayer) map.removeLayer(routeLayer);
+    routeLayer = L.geoJSON(data, {
+      style: { color: '#00e5ff', weight: 5, opacity: .8, dashArray: '10 5' }
+    }).addTo(map).bindPopup('🛣️ Evacuation Route').openPopup();
+    map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+  })
+  .catch(() => alert('Could not fetch route. Check ORS API key.'));
+}
+</script>
+{% endblock %}
