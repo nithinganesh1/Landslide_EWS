@@ -4,65 +4,59 @@
 
 {% block extra_head %}
 <style>
-  #main-map { height: calc(100vh - 200px); min-height: 500px; border-radius: 12px; border: 1px solid var(--border); }
-  .map-controls {
-    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
-  }
-  .map-btn {
-    font-family: var(--font-head); font-size: .75rem; letter-spacing: 1px;
-    text-transform: uppercase; padding: 6px 14px; border-radius: 6px;
-    border: 1px solid var(--border); background: var(--bg-card);
-    color: var(--text-primary); cursor: pointer; transition: all .2s;
-  }
-  .map-btn:hover, .map-btn.active { border-color: var(--accent-cyan); color: var(--accent-cyan); }
-  .legend-box {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 16px; font-size: .8rem;
-  }
-  .legend-item { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  #main-map { height: calc(100vh - 240px); min-height: 480px; }
   .leaflet-popup-content-wrapper {
-    background: #0a1a2e !important; border: 1px solid #1a3a5c !important;
-    color: #e2f0ff !important; border-radius: 8px !important;
+    border-radius: 3px !important; border: 1px solid var(--border) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08) !important; font-family: var(--font);
   }
-  .leaflet-popup-tip { background: #0a1a2e !important; }
+  .leaflet-popup-tip-container { display: none; }
+  .map-legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    padding: 12px 14px; background: var(--white);
+    border: 1px solid var(--border); border-radius: 3px;
+    font-size: 11px; color: var(--text-muted);
+  }
+  .leg-item { display: flex; align-items: center; gap: 6px; }
+  .leg-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .status-row {
+    display: flex; gap: 20px; font-size: 11px;
+    font-family: var(--mono); color: var(--text-muted);
+  }
+  .status-row strong { color: var(--text); }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="row g-3">
+  <!-- Map area -->
   <div class="col-12">
-    <!-- Controls -->
-    <div class="map-controls">
-      <button class="map-btn active" onclick="toggleLayer('sensor')">📍 Sensor</button>
-      <button class="map-btn active" onclick="toggleLayer('risk')">⭕ Risk Zone</button>
-      <button class="map-btn" onclick="toggleLayer('shelters')">🏠 Shelters</button>
-      <button class="map-btn" onclick="locateUser()">🧭 My Location</button>
-      <button class="map-btn" onclick="getEvacRoute()">🛣️ Evacuation Route</button>
-      <button class="map-btn" onclick="toggleLayer('reports')">⚠️ Reports</button>
-    </div>
-    <div id="main-map"></div>
-  </div>
-  <div class="col-md-8">
-    <div class="legend-box">
-      <div style="font-family:var(--font-mono);font-size:.65rem;letter-spacing:2px;color:var(--text-muted);margin-bottom:8px">MAP LEGEND</div>
-      <div class="d-flex flex-wrap gap-4">
-        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> High Risk Zone</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Warning Zone</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Safe Zone / Sensor</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#00aaff"></div> Evacuation Shelter</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div> User Report</div>
+    <div class="c-card">
+      <div class="c-card-head">
+        <span class="c-card-title">Terrain & Risk Visualization</span>
+        <div class="status-row">
+          <span>Risk: <strong style="color:{{ risk.color }}">{{ risk.level }}</strong></span>
+          <span>Coords: <strong>{{ lat }}°N, {{ lon }}°E</strong></span>
+        </div>
       </div>
-    </div>
-  </div>
-  <div class="col-md-4">
-    <div class="card-dark text-center">
-      <div class="card-label">Sensor Coordinates</div>
-      <div class="text-mono mt-2" style="font-size:.85rem;color:var(--accent-cyan)">
-        {{ lat }}° N, {{ lon }}° E
+      <div style="padding:10px 14px;border-bottom:1px solid var(--border)">
+        <div class="map-bar">
+          <button class="map-ctl on" id="btn-sensor"   onclick="tog('sensor',  this)">📍 Sensor Node</button>
+          <button class="map-ctl on" id="btn-risk"     onclick="tog('risk',    this)">⭕ Risk Zone</button>
+          <button class="map-ctl"    id="btn-shelters" onclick="tog('shelters',this)">🏠 Shelters</button>
+          <button class="map-ctl"    id="btn-reports"  onclick="tog('reports', this)">⚠ Field Reports</button>
+          <button class="map-ctl"    onclick="locateMe()">🧭 My Location</button>
+          <button class="map-ctl"    onclick="getRoute()">🛣 Evacuation Route</button>
+        </div>
       </div>
-      <div class="mt-2" style="font-size:.85rem">
-        Risk: <span style="color:{{ risk.color }};font-weight:700;font-family:var(--font-head)">{{ risk.level }}</span>
+      <div id="main-map"></div>
+      <div style="padding:10px 14px;border-top:1px solid var(--border)">
+        <div class="map-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:var(--red-700)"></div> High Risk Zone</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--amber-700)"></div> Warning Zone</div>
+          <div class="leg-item"><div class="leg-dot" style="background:var(--green-700)"></div> Safe / Sensor</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#1d4ed8"></div> Evacuation Shelter</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#6b21a8"></div> Field Report</div>
+        </div>
       </div>
     </div>
   </div>
@@ -71,110 +65,94 @@
 
 {% block extra_js %}
 <script>
-const LAT = {{ lat }};
-const LON = {{ lon }};
+const LAT = {{ lat }}, LON = {{ lon }};
 const RISK_COLOR = "{{ risk.color }}";
 const RISK_CSS   = "{{ risk.css_class }}";
-const ORS_KEY    = "{{ config['ORS_API_KEY'] if config else '5b3ce3597851110001cf6248YOUR_KEY' }}";
+const ORS_KEY    = "{{ ors_key }}";
+const reports    = {{ reports|tojson }};
 
-const reports = {{ reports | tojson }};
-
-// ── Map init ──
 const map = L.map('main-map').setView([LAT, LON], 14);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
+  attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// ── Layers ──
 const layers = {};
 
 // Sensor marker
 layers.sensor = L.layerGroup([
-  L.circleMarker([LAT, LON], {
+  L.circleMarker([LAT,LON], {
     color: RISK_COLOR, fillColor: RISK_COLOR,
-    fillOpacity: .85, radius: 12, weight: 3
-  }).bindPopup(`<b>📡 Sensor Node</b><br>Lat: ${LAT}<br>Lon: ${LON}<br>Risk: <b style="color:${RISK_COLOR}">${RISK_CSS.toUpperCase()}</b>`)
+    fillOpacity:.85, radius:10, weight:2
+  }).bindPopup(`<strong>Sensor Node</strong><br>Lat: ${LAT} · Lon: ${LON}<br>Risk: <strong>${RISK_CSS.toUpperCase()}</strong>`)
 ]).addTo(map);
 
 // Risk zone
-const riskRadius = {'safe': 300, 'warning': 600, 'danger': 1000}[RISK_CSS] || 500;
+const radii = {safe:300, warning:600, danger:1000};
 layers.risk = L.layerGroup([
-  L.circle([LAT, LON], {
-    radius: riskRadius, color: RISK_COLOR,
-    fillColor: RISK_COLOR, fillOpacity: 0.12, dashArray: '8 4'
-  }).bindPopup(`⚠️ Risk Zone — ${riskRadius}m radius`)
+  L.circle([LAT,LON], {
+    radius: radii[RISK_CSS]||500,
+    color: RISK_COLOR, fillColor: RISK_COLOR, fillOpacity:.06,
+    weight:1.5, dashArray:'6 4'
+  }).bindPopup(`Risk zone radius: ${radii[RISK_CSS]||500}m`)
 ]).addTo(map);
 
-// Mock shelters (replace with Nominatim query for real data)
+// Shelters
 const shelters = [
-  { lat: LAT + 0.02, lon: LON + 0.01, name: "Government Higher Secondary School" },
-  { lat: LAT - 0.015, lon: LON + 0.02, name: "Community Health Centre" },
-  { lat: LAT + 0.01, lon: LON - 0.025, name: "District Sports Stadium" },
+  {lat:LAT+.02, lon:LON+.01, name:'Govt. Higher Secondary School'},
+  {lat:LAT-.015, lon:LON+.02, name:'Community Health Centre'},
+  {lat:LAT+.01, lon:LON-.025, name:'District Sports Stadium'},
 ];
-layers.shelters = L.layerGroup(
-  shelters.map(s =>
-    L.marker([s.lat, s.lon], {
-      icon: L.divIcon({
-        className: '', html: '<div style="background:#00aaff;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;white-space:nowrap;font-family:Rajdhani,sans-serif;font-weight:700">🏠 Shelter</div>',
-        iconAnchor: [30, 10]
-      })
-    }).bindPopup(`<b>🏠 ${s.name}</b><br>Evacuation Shelter`)
-  )
-);
+layers.shelters = L.layerGroup(shelters.map(s =>
+  L.circleMarker([s.lat,s.lon], {color:'#1d4ed8',fillColor:'#1d4ed8',fillOpacity:.8,radius:7,weight:2})
+    .bindPopup(`<strong>${s.name}</strong><br>Evacuation Shelter`)
+));
 
-// User reports
-layers.reports = L.layerGroup(
-  reports.map(r =>
-    L.circleMarker([r.latitude || LAT, r.longitude || LON], {
-      color: '#818cf8', fillColor: '#818cf8', fillOpacity: .8, radius: 8
-    }).bindPopup(`<b>⚠️ ${r.type}</b><br>${r.description}<br><small>Severity: ${r.severity}</small>`)
-  )
-);
+// Reports
+layers.reports = L.layerGroup(reports.map(r =>
+  L.circleMarker([r.latitude||LAT, r.longitude||LON], {
+    color:'#6b21a8',fillColor:'#6b21a8',fillOpacity:.7,radius:6,weight:2
+  }).bindPopup(`<strong>${r.type}</strong><br>${r.description}<br>Severity: ${r.severity}`)
+));
 
-// ── Toggle ──
-function toggleLayer(name) {
+function tog(name, btn) {
   if (!layers[name]) return;
   if (map.hasLayer(layers[name])) {
-    map.removeLayer(layers[name]);
+    map.removeLayer(layers[name]); btn.classList.remove('on');
   } else {
-    map.addLayer(layers[name]);
+    map.addLayer(layers[name]); btn.classList.add('on');
   }
 }
 
-// ── User location ──
-let userMarker = null;
-function locateUser() {
-  map.locate({ setView: true, maxZoom: 15 });
+let userMk = null;
+function locateMe() {
+  map.locate({setView:true, maxZoom:15});
 }
 map.on('locationfound', e => {
-  if (userMarker) map.removeLayer(userMarker);
-  userMarker = L.circleMarker(e.latlng, {
-    color: '#00e5ff', fillColor: '#00e5ff', fillOpacity: .9, radius: 10
-  }).bindPopup('📍 Your Location').addTo(map).openPopup();
+  if (userMk) map.removeLayer(userMk);
+  userMk = L.circleMarker(e.latlng, {color:'#0f172a',fillColor:'#0f172a',fillOpacity:.9,radius:7,weight:2})
+    .bindPopup('Your Location').addTo(map).openPopup();
 });
-map.on('locationerror', () => alert('Location access denied.'));
+map.on('locationerror', ()=> alert('Location permission denied.'));
 
-// ── Evacuation route via ORS ──
-let routeLayer = null;
-function getEvacRoute() {
-  if (!userMarker) { alert('Click "My Location" first.'); return; }
-  const from = userMarker.getLatLng();
-  const to   = { lat: shelters[0].lat, lng: shelters[0].lon };
-
+let routeL = null;
+function getRoute() {
+  if (!userMk) { alert('Click "My Location" first.'); return; }
+  const from = userMk.getLatLng();
   fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
-    method: 'POST',
-    headers: { 'Authorization': ORS_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ coordinates: [[from.lng, from.lat], [to.lng, to.lat]] })
+    method:'POST',
+    headers:{'Authorization':ORS_KEY,'Content-Type':'application/json'},
+    body: JSON.stringify({coordinates:[[from.lng,from.lat],[shelters[0].lon,shelters[0].lat]]})
   })
-  .then(r => r.json())
+  .then(r=>r.json())
   .then(data => {
-    if (routeLayer) map.removeLayer(routeLayer);
-    routeLayer = L.geoJSON(data, {
-      style: { color: '#00e5ff', weight: 5, opacity: .8, dashArray: '10 5' }
-    }).addTo(map).bindPopup('🛣️ Evacuation Route').openPopup();
-    map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+    if (routeL) map.removeLayer(routeL);
+    routeL = L.geoJSON(data, {style:{color:'#1d4ed8',weight:4,opacity:.7}})
+      .addTo(map).bindPopup('Evacuation Route').openPopup();
+    map.fitBounds(routeL.getBounds(), {padding:[30,30]});
   })
-  .catch(() => alert('Could not fetch route. Check ORS API key.'));
+  .catch(()=> alert('Could not fetch route. Check ORS API key.'));
 }
+
+document.getElementById('ftr-coords').textContent = `${LAT}°N, ${LON}°E`;
 </script>
 {% endblock %}

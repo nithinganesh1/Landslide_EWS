@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 from utils.firebase_client import get_sensor_data, get_reports
 from utils.risk_engine import compute_risk
+from config import Config
 
 map_bp = Blueprint("map_view", __name__)
 
@@ -12,4 +13,4 @@ def map_view():
     lat     = float(data.get("Latitude") or 11.2588)
     lon     = float(data.get("Longitude") or 75.7804)
     return render_template("map.html", data=data, risk=risk,
-                           reports=reports, lat=lat, lon=lon)
+                           reports=reports, lat=lat, lon=lon, ors_key=Config.ORS_API_KEY)

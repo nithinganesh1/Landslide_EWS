@@ -5,292 +5,523 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}LandslideWatch EWS{% endblock %}</title>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-
-  <!-- Bootstrap 5 -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     :root {
-      --bg-primary:    #030b14;
-      --bg-secondary:  #071220;
-      --bg-card:       #0a1a2e;
-      --bg-card-hover: #0d2240;
-      --border:        #1a3a5c;
-      --accent-blue:   #00aaff;
-      --accent-cyan:   #00e5ff;
-      --safe:          #22c55e;
-      --warning:       #f59e0b;
-      --danger:        #ef4444;
-      --text-primary:  #e2f0ff;
-      --text-muted:    #7a9ab8;
-      --font-head:     'Rajdhani', sans-serif;
-      --font-body:     'Exo 2', sans-serif;
-      --font-mono:     'Share Tech Mono', monospace;
+      --white:      #ffffff;
+      --grey-50:    #f7f6f4;
+      --grey-100:   #eeede9;
+      --grey-200:   #dedad4;
+      --grey-300:   #c6c2ba;
+      --grey-400:   #9e9a92;
+      --grey-500:   #6e6b63;
+      --grey-700:   #3c3a35;
+      --grey-900:   #1c1b18;
+      --red-700:    #b91c1c;
+      --red-50:     #fef2f2;
+      --red-100:    #fee2e2;
+      --amber-700:  #b45309;
+      --amber-50:   #fffbeb;
+      --amber-100:  #fef3c7;
+      --green-700:  #15803d;
+      --green-50:   #f0fdf4;
+      --green-100:  #dcfce7;
+      --blue-800:   #1e40af;
+
+      --border:       #e0ddd7;
+      --border-strong:#c6c2ba;
+      --text:         #1c1b18;
+      --text-muted:   #6e6b63;
+      --text-light:   #9e9a92;
+
+      --font:  'IBM Plex Sans', system-ui, sans-serif;
+      --mono:  'IBM Plex Mono', monospace;
+      --hh:    56px;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
 
     body {
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      min-height: 100vh;
-      background-image:
-        radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0,100,200,0.15) 0%, transparent 60%),
-        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a3a5c' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      font-family: var(--font);
+      background: var(--grey-50);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      position: fixed; top: 0; left: 0; height: 100vh; width: 240px;
-      background: var(--bg-secondary);
-      border-right: 1px solid var(--border);
-      z-index: 1000;
-      display: flex; flex-direction: column;
-      transition: transform .3s ease;
+    /* ─── HEADER ──────────────────────────────────────────── */
+    .site-header {
+      position: fixed; top:0; left:0; right:0; height: var(--hh);
+      background: var(--white); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; padding: 0 20px;
+      z-index: 500; gap: 0;
     }
-    .sidebar-brand {
-      padding: 20px 16px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .sidebar-brand h1 {
-      font-family: var(--font-head);
-      font-size: 1.3rem; font-weight: 700; letter-spacing: 2px;
-      color: var(--accent-cyan);
-      text-transform: uppercase;
-      line-height: 1.1;
-    }
-    .sidebar-brand small {
-      font-size: 0.65rem; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 1px;
-    }
-    .pulse-dot {
-      display: inline-block; width: 8px; height: 8px;
-      background: var(--safe); border-radius: 50%;
-      box-shadow: 0 0 0 0 rgba(34,197,94,.4);
-      animation: pulse-ring 2s infinite;
-      margin-right: 6px;
-    }
-    @keyframes pulse-ring {
-      0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
-      70%  { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
-      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-    }
-    .nav-links { padding: 16px 0; flex: 1; }
-    .nav-links a {
+    .brand {
       display: flex; align-items: center; gap: 10px;
-      padding: 12px 20px; color: var(--text-muted);
-      text-decoration: none; font-family: var(--font-head);
-      font-size: 0.95rem; font-weight: 500; letter-spacing: 1px;
-      text-transform: uppercase; transition: all .2s;
-      border-left: 3px solid transparent;
+      text-decoration: none; flex-shrink: 0;
     }
-    .nav-links a:hover, .nav-links a.active {
-      color: var(--accent-cyan); border-left-color: var(--accent-cyan);
-      background: rgba(0,229,255,.05);
+    .brand-icon {
+      width: 30px; height: 30px; background: var(--red-700);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff; font-weight: 700; letter-spacing: -.5px;
+      flex-shrink: 0;
     }
-    .nav-links a i { font-size: 1.1rem; width: 20px; }
-    .sidebar-footer {
-      padding: 14px 16px; border-top: 1px solid var(--border);
-      font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);
+    .brand-name {
+      font-size: 13px; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--text);
     }
-
-    /* ── Main ── */
-    .main-content {
-      margin-left: 240px; min-height: 100vh;
-      padding: 24px; transition: margin .3s;
+    .brand-sub {
+      font-size: 10px; color: var(--text-muted);
+      letter-spacing: .03em; margin-top: 1px;
     }
-    .topbar {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 24px; padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+    .hdr-sep {
+      width: 1px; height: 28px; background: var(--border); margin: 0 18px; flex-shrink: 0;
     }
-    .topbar h2 {
-      font-family: var(--font-head); font-size: 1.5rem; font-weight: 700;
-      letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary);
+    .hdr-nav {
+      display: flex; gap: 2px; flex: 1; overflow-x: auto;
     }
-    .live-badge {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
-      border-radius: 20px; padding: 4px 12px;
-      font-family: var(--font-mono); font-size: 0.75rem; color: var(--safe);
+    .hdr-nav::-webkit-scrollbar { display: none; }
+    .hdr-nav a {
+      display: flex; align-items: center; gap: 6px; padding: 6px 11px;
+      border-radius: 3px; font-size: 13px; color: var(--text-muted);
+      text-decoration: none; white-space: nowrap; transition: all .12s;
     }
-
-    /* ── Cards ── */
-    .card-dark {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px; transition: all .2s;
+    .hdr-nav a:hover { color: var(--text); background: var(--grey-100); }
+    .hdr-nav a.active { color: var(--text); background: var(--grey-100); font-weight: 500; }
+    .hdr-nav a i { font-size: 13px; }
+    .hdr-right {
+      display: flex; align-items: center; gap: 14px;
+      margin-left: auto; flex-shrink: 0; padding-left: 12px;
     }
-    .card-dark:hover { border-color: rgba(0,170,255,.4); background: var(--bg-card-hover); }
-    .card-label {
-      font-family: var(--font-mono); font-size: 0.7rem;
-      color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;
-      margin-bottom: 8px;
+    .live-pill {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-family: var(--mono); color: var(--green-700);
+      font-weight: 500;
     }
-    .card-value {
-      font-family: var(--font-head); font-size: 2rem; font-weight: 700;
-      line-height: 1;
+    .live-pill::before {
+      content:''; width:6px; height:6px; border-radius:50%;
+      background: #16a34a;
     }
-    .card-unit { font-size: 0.9rem; color: var(--text-muted); margin-left: 4px; }
-    .card-icon {
-      font-size: 2rem; opacity: .3; position: absolute; right: 16px; top: 16px;
+    .hdr-clock {
+      font-family: var(--mono); font-size: 11px; color: var(--text-muted);
+    }
+    .mob-btn {
+      display: none; background: none; border: 1px solid var(--border);
+      border-radius: 3px; padding: 5px 8px; cursor: pointer;
+      color: var(--text); margin-left: auto;
     }
 
-    /* ── Risk Badge ── */
+    /* ─── MOBILE NAV ──────────────────────────────────────── */
+    .mob-nav {
+      display: none; position: fixed; top: var(--hh); left:0; right:0;
+      background: var(--white); border-bottom: 1px solid var(--border);
+      z-index: 490;
+    }
+    .mob-nav.open { display: block; }
+    .mob-nav a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 20px; font-size: 14px; color: var(--text);
+      text-decoration: none; border-bottom: 1px solid var(--grey-100);
+    }
+    .mob-nav a:last-child { border-bottom: none; }
+    .mob-nav a.active { background: var(--grey-50); font-weight: 500; }
+
+    /* ─── PAGE ────────────────────────────────────────────── */
+    .page-wrap {
+      padding-top: var(--hh);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .page-inner {
+      flex: 1;
+      max-width: 1300px; margin: 0 auto; width: 100%;
+      padding: 28px 24px 48px;
+    }
+    .pg-head {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 24px;
+    }
+    .pg-head h1 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+    .pg-meta { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+    /* ─── RISK BANNER ─────────────────────────────────────── */
     .risk-banner {
-      border-radius: 16px; padding: 24px 32px;
-      display: flex; align-items: center; gap: 24px;
-      position: relative; overflow: hidden;
+      display: flex; align-items: center; gap: 16px;
+      padding: 18px 20px; border-radius: 3px; margin-bottom: 20px;
+      border-left: 4px solid;
     }
-    .risk-banner.safe    { background: linear-gradient(135deg,rgba(34,197,94,.15),rgba(34,197,94,.05)); border: 2px solid rgba(34,197,94,.4); }
-    .risk-banner.warning { background: linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.05)); border: 2px solid rgba(245,158,11,.4); }
-    .risk-banner.danger  {
-      background: linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.05));
-      border: 2px solid rgba(239,68,68,.5);
-      animation: danger-pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes danger-pulse {
-      0%,100% { box-shadow: 0 0 20px rgba(239,68,68,.2); }
-      50%     { box-shadow: 0 0 40px rgba(239,68,68,.5); }
-    }
-    .risk-level-text {
-      font-family: var(--font-head); font-size: 3rem; font-weight: 700;
-      letter-spacing: 4px; text-transform: uppercase;
-    }
-    .risk-level-text.safe    { color: var(--safe); }
-    .risk-level-text.warning { color: var(--warning); }
-    .risk-level-text.danger  { color: var(--danger); }
+    .risk-banner.safe    { background: var(--green-50); border-color: var(--green-700); }
+    .risk-banner.warning { background: var(--amber-50); border-color: var(--amber-700); }
+    .risk-banner.danger  { background: var(--red-50);   border-color: var(--red-700); }
 
-    /* ── Progress ── */
-    .sensor-bar { background: rgba(255,255,255,.06); border-radius: 4px; height: 6px; }
-    .sensor-fill { height: 6px; border-radius: 4px; transition: width .5s; }
+    .risk-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .risk-dot.safe    { background: var(--green-700); }
+    .risk-dot.warning { background: var(--amber-700); }
+    .risk-dot.danger  { background: var(--red-700); }
 
-    /* ── Flash messages ── */
-    .alert-ews { border-radius: 8px; font-family: var(--font-body); }
+    .risk-tag {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 500; color: var(--text-muted); display: block;
+    }
+    .risk-name {
+      font-size: 20px; font-weight: 600; line-height: 1.1;
+    }
+    .risk-name.safe    { color: var(--green-700); }
+    .risk-name.warning { color: var(--amber-700); }
+    .risk-name.danger  { color: var(--red-700); }
+    .risk-detail { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
 
-    /* ── Mobile toggle ── */
-    .sidebar-toggle {
-      display: none; background: var(--bg-card); border: 1px solid var(--border);
-      color: var(--text-primary); border-radius: 8px; padding: 6px 10px;
-      cursor: pointer; font-size: 1.2rem;
+    .risk-right { margin-left: auto; text-align: right; flex-shrink: 0; }
+    .risk-score-val {
+      font-family: var(--mono); font-size: 26px; font-weight: 500; line-height: 1;
+    }
+    .risk-score-val.safe    { color: var(--green-700); }
+    .risk-score-val.warning { color: var(--amber-700); }
+    .risk-score-val.danger  { color: var(--red-700); }
+    .risk-score-lbl {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+      color: var(--text-muted); margin-top: 3px;
     }
 
+    /* ─── WEATHER ALERT STRIP ─────────────────────────────── */
+    .alert-strip {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--amber-50); border: 1px solid #fcd34d;
+      border-radius: 3px; padding: 11px 14px; margin-bottom: 20px;
+      font-size: 13px; color: #78350f;
+    }
+
+    /* ─── SENSOR STRIP ────────────────────────────────────── */
+    .sensor-strip {
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      background: var(--border); gap: 1px; border: 1px solid var(--border);
+      border-radius: 3px; overflow: hidden; margin-bottom: 20px;
+    }
+    .s-cell { background: var(--white); padding: 14px 14px 12px; }
+    .s-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 7px;
+    }
+    .s-val {
+      font-family: var(--mono); font-size: 22px; font-weight: 400;
+      line-height: 1; color: var(--text);
+    }
+    .s-unit { font-size: 12px; color: var(--text-muted); }
+    .s-bar { height: 2px; background: var(--grey-100); border-radius: 1px; margin-top: 9px; }
+    .s-fill { height: 2px; border-radius: 1px; transition: width .4s; }
+    .s-badge {
+      display: inline-block; font-size: 10px; font-family: var(--mono);
+      text-transform: uppercase; padding: 2px 7px; border-radius: 2px;
+      font-weight: 500; letter-spacing: .03em; margin-top: 6px;
+    }
+    .s-active { background: var(--red-50);   color: var(--red-700); }
+    .s-clear  { background: var(--green-50); color: var(--green-700); }
+    .s-detect { background: var(--red-50);   color: var(--red-700); }
+    .s-none   { background: var(--grey-100); color: var(--text-muted); }
+
+    /* ─── CARD ────────────────────────────────────────────── */
+    .c-card {
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 3px; overflow: hidden;
+    }
+    .c-card-head {
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .c-card-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+      font-weight: 500; color: var(--text-muted);
+    }
+    .c-card-body { padding: 16px; }
+
+    /* ─── MINI MAP ────────────────────────────────────────── */
+    #mini-map, #main-map, #report-map { border: none; }
+
+    /* ─── WEATHER CARD ────────────────────────────────────── */
+    .wth-main { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .wth-temp { font-family: var(--mono); font-size: 38px; font-weight: 400; line-height:1; }
+    .wth-desc { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .wth-row {
+      display: flex; justify-content: space-between;
+      font-size: 12px; padding: 7px 0; border-top: 1px solid var(--grey-100);
+    }
+    .wth-row .k { color: var(--text-muted); }
+    .wth-row .v { font-family: var(--mono); }
+
+    /* ─── GPS ROWS ────────────────────────────────────────── */
+    .gps-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-top: 1px solid var(--grey-100);
+    }
+    .gps-row:first-child { border-top: none; }
+    .gps-k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+    .gps-v { font-family: var(--mono); font-size: 12px; }
+
+    /* ─── LOG ─────────────────────────────────────────────── */
+    .log-entry {
+      font-family: var(--mono); font-size: 11px;
+      display: flex; gap: 8px; padding: 4px 0;
+      border-top: 1px solid var(--grey-100); color: var(--text-muted);
+    }
+    .log-entry:first-child { border-top: none; }
+    .log-t { color: var(--text-light); flex-shrink: 0; }
+    .c-ok   { color: var(--green-700); }
+    .c-warn { color: var(--amber-700); }
+    .c-info { color: #1d4ed8; }
+
+    /* ─── FORMS ───────────────────────────────────────────── */
+    .form-control, .form-select {
+      border: 1px solid var(--border); border-radius: 3px;
+      font-family: var(--font); font-size: 13px; padding: 8px 10px;
+      background: var(--white); color: var(--text);
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--grey-400); box-shadow: none;
+    }
+    .form-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+      font-weight: 500; color: var(--text-muted); margin-bottom: 4px;
+      display: block;
+    }
+    .btn-solid {
+      background: var(--grey-900); color: var(--white); border: none;
+      border-radius: 3px; padding: 9px 18px; font-family: var(--font);
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .12s;
+    }
+    .btn-solid:hover { opacity: .82; }
+    .btn-red {
+      background: var(--red-700); color: var(--white); border: none;
+      border-radius: 3px; padding: 9px 18px; font-family: var(--font);
+      font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .12s;
+    }
+    .btn-red:hover { opacity: .85; }
+    .btn-ghost {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); border-radius: 3px; padding: 8px 16px;
+      font-family: var(--font); font-size: 12px; cursor: pointer; transition: background .12s;
+    }
+    .btn-ghost:hover { background: var(--grey-100); }
+
+    /* ─── SEVERITY TOGGLE ─────────────────────────────────── */
+    .sev-toggle { display: flex; }
+    .sev-opt {
+      flex: 1; text-align: center; padding: 8px 4px;
+      border: 1px solid var(--border); background: var(--white);
+      font-family: var(--font); font-size: 12px; cursor: pointer;
+      color: var(--text-muted); transition: all .12s;
+    }
+    .sev-opt:not(:first-child) { margin-left: -1px; }
+    .sev-opt:first-child { border-radius: 3px 0 0 3px; }
+    .sev-opt:last-child  { border-radius: 0 3px 3px 0; }
+    .sev-opt.on-low    { background: var(--green-50);  color: var(--green-700); border-color: #86efac; font-weight: 500; }
+    .sev-opt.on-medium { background: var(--amber-50);  color: var(--amber-700); border-color: #fcd34d; font-weight: 500; }
+    .sev-opt.on-high   { background: var(--red-50);    color: var(--red-700);   border-color: #fca5a5; font-weight: 500; }
+
+    /* ─── REPORT ITEMS ────────────────────────────────────── */
+    .rep-item { padding: 13px 0; border-bottom: 1px solid var(--grey-100); }
+    .rep-item:last-child { border-bottom: none; }
+    .rep-type { font-size: 13px; font-weight: 500; }
+    .rep-body { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .rep-meta { font-family: var(--mono); font-size: 10px; color: var(--text-light); margin-top: 5px; }
+    .sev-tag {
+      display: inline-block; font-size: 10px; font-family: var(--mono);
+      text-transform: uppercase; padding: 1px 7px; border-radius: 2px; font-weight: 500;
+    }
+    .sev-tag.low    { background: var(--green-50);  color: var(--green-700); }
+    .sev-tag.medium { background: var(--amber-50);  color: var(--amber-700); }
+    .sev-tag.high   { background: var(--red-50);    color: var(--red-700); }
+
+    /* ─── MAP PAGE ────────────────────────────────────────── */
+    .map-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .map-ctl {
+      font-size: 11px; padding: 5px 11px; border-radius: 2px;
+      border: 1px solid var(--border); background: var(--white);
+      color: var(--text-muted); cursor: pointer; font-family: var(--font);
+      transition: all .1s;
+    }
+    .map-ctl:hover { color: var(--text); background: var(--grey-100); }
+    .map-ctl.on { color: var(--text); background: var(--grey-100); border-color: var(--border-strong); }
+
+    /* ─── FORECAST ────────────────────────────────────────── */
+    .fc-grid {
+      display: grid; grid-template-columns: repeat(5,1fr);
+      gap: 1px; background: var(--border);
+    }
+    .fc-cell { background: var(--white); padding: 14px 10px; text-align: center; }
+    .fc-date { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-bottom: 8px; }
+    .fc-temp { font-family: var(--mono); font-size: 20px; font-weight: 400; }
+    .fc-pop  { font-size: 10px; color: #1d4ed8; margin-top: 4px; font-family: var(--mono); }
+    .fc-bar  { height: 2px; background: var(--grey-100); border-radius: 1px; margin-top: 6px; }
+    .fc-fill { height: 2px; border-radius: 1px; }
+    .fc-desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    /* ─── EMERGENCY PAGE ──────────────────────────────────── */
+    .sos-banner {
+      background: var(--red-700); color: var(--white); border-radius: 3px;
+      padding: 18px 22px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 20px;
+    }
+    .sos-num { font-family: var(--mono); font-size: 36px; font-weight: 400; line-height: 1; }
+    .sos-label { font-size: 12px; opacity: .85; margin-top: 4px; }
+
+    .ct-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 13px 0; border-bottom: 1px solid var(--grey-100);
+    }
+    .ct-row:last-child { border-bottom: none; }
+    .ct-name { font-size: 13px; font-weight: 500; }
+    .ct-type { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin-top: 2px; }
+    .ct-num { font-family: var(--mono); font-size: 17px; font-weight: 500; color: var(--red-700); text-decoration: none; }
+    .ct-num:hover { color: var(--red-700); text-decoration: underline; }
+
+    .step-row { display: flex; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--grey-100); }
+    .step-row:last-child { border-bottom: none; }
+    .step-n { font-family: var(--mono); font-size: 12px; color: var(--text-light); flex-shrink: 0; width: 18px; padding-top: 1px; }
+    .step-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .step-body  { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+    /* ─── CORRELATION ─────────────────────────────────────── */
+    .corr-row {
+      display: grid; grid-template-columns: 1.4fr auto 2fr;
+      gap: 14px; align-items: start; padding: 11px 0;
+      border-top: 1px solid var(--grey-100);
+    }
+    .corr-row:first-child { border-top: none; }
+    .corr-trig { font-size: 12px; }
+    .corr-risk { font-family: var(--mono); font-size: 10px; text-transform: uppercase; padding: 2px 8px; border-radius: 2px; white-space: nowrap; font-weight: 500; }
+    .corr-act  { font-size: 12px; color: var(--text-muted); }
+
+    /* ─── FOOTER ──────────────────────────────────────────── */
+    .site-footer {
+      border-top: 1px solid var(--border); padding: 14px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: var(--text-muted);
+      max-width: 1300px; margin: 0 auto; width: 100%;
+    }
+
+    /* ─── RESPONSIVE ──────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .sensor-strip { grid-template-columns: repeat(3,1fr); }
+    }
     @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; padding: 16px; }
-      .sidebar-toggle { display: block; }
-      .risk-level-text { font-size: 2rem; }
+      .hdr-nav, .hdr-sep { display: none; }
+      .mob-btn { display: block; }
+      .hdr-right .hdr-clock { display: none; }
+      .page-inner { padding: 16px 16px 32px; }
+      .sensor-strip { grid-template-columns: repeat(2,1fr); }
+      .risk-banner { flex-wrap: wrap; }
+      .risk-right { margin-left: 0; }
+      .fc-grid { grid-template-columns: repeat(3,1fr); }
+      .site-footer { flex-direction: column; gap: 4px; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .sensor-strip { grid-template-columns: 1fr 1fr; }
+      .fc-grid { grid-template-columns: repeat(2,1fr); }
+      .sos-num { font-size: 28px; }
+      .corr-row { grid-template-columns: 1fr; gap: 4px; }
     }
 
-    /* ── Misc ── */
-    .text-mono { font-family: var(--font-mono); }
-    .text-accent { color: var(--accent-cyan); }
-    .divider { border-color: var(--border); }
-    a { color: var(--accent-blue); }
-    a:hover { color: var(--accent-cyan); }
-    .btn-ews {
-      font-family: var(--font-head); letter-spacing: 1px; text-transform: uppercase;
-      border-radius: 8px; font-weight: 600;
-    }
-    .btn-ews-primary {
-      background: linear-gradient(135deg, #005fa3, #007acc);
-      border: none; color: #fff;
-    }
-    .btn-ews-primary:hover { background: linear-gradient(135deg, #0077cc, #00aaff); color: #fff; }
-    .btn-ews-danger { background: linear-gradient(135deg,#c0392b,#e74c3c); border: none; color: #fff; }
-
-    /* Leaflet dark tiles override */
-    .leaflet-tile { filter: brightness(.7) saturate(.8); }
+    /* ─── FLASH ───────────────────────────────────────────── */
+    .flash { border-radius: 3px; padding: 10px 14px; margin-bottom: 16px;
+      font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .flash-success { background: var(--green-50); border: 1px solid #86efac; color: var(--green-700); }
+    .flash-danger  { background: var(--red-50);   border: 1px solid #fca5a5; color: var(--red-700); }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<!-- Sidebar -->
-<nav class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <div class="d-flex align-items-center mb-1">
-      <span class="pulse-dot" id="sys-dot"></span>
-      <span style="font-family:var(--font-mono);font-size:.65rem;color:var(--safe)">SYSTEM ONLINE</span>
+<!-- HEADER -->
+<header class="site-header">
+  <a class="brand" href="{{ url_for('dashboard.index') }}">
+    <div class="brand-icon">EW</div>
+    <div>
+      <div class="brand-name">LandslideWatch</div>
+      <div class="brand-sub">Early Warning System</div>
     </div>
-    <h1>⛰️ LandslideWatch</h1>
-    <small>Early Warning System v2.0</small>
+  </a>
+  <div class="hdr-sep"></div>
+  <nav class="hdr-nav">
+    <a href="{{ url_for('dashboard.index') }}"          class="{{ 'active' if request.endpoint=='dashboard.index' }}">
+      <i class="bi bi-grid-3x3-gap"></i> Dashboard</a>
+    <a href="{{ url_for('map_view.map_view') }}"        class="{{ 'active' if request.endpoint=='map_view.map_view' }}">
+      <i class="bi bi-map"></i> Live Map</a>
+    <a href="{{ url_for('weather.weather_view') }}"     class="{{ 'active' if request.endpoint=='weather.weather_view' }}">
+      <i class="bi bi-cloud-rain"></i> Weather</a>
+    <a href="{{ url_for('report.report_view') }}"       class="{{ 'active' if request.endpoint=='report.report_view' }}">
+      <i class="bi bi-exclamation-triangle"></i> Report</a>
+    <a href="{{ url_for('emergency.emergency_view') }}" class="{{ 'active' if request.endpoint=='emergency.emergency_view' }}">
+      <i class="bi bi-telephone"></i> Emergency</a>
+  </nav>
+  <div class="hdr-right">
+    <span class="live-pill">LIVE</span>
+    <span class="hdr-clock" id="hdr-clock"></span>
   </div>
+  <button class="mob-btn" onclick="toggleMob()" aria-label="Menu">
+    <i class="bi bi-list" style="font-size:18px"></i>
+  </button>
+</header>
 
-  <div class="nav-links">
-    <a href="{{ url_for('dashboard.index') }}"      class="{{ 'active' if request.endpoint == 'dashboard.index' }}">
-      <i class="bi bi-speedometer2"></i> Dashboard
-    </a>
-    <a href="{{ url_for('map_view.map_view') }}"    class="{{ 'active' if request.endpoint == 'map_view.map_view' }}">
-      <i class="bi bi-map"></i> Live Map
-    </a>
-    <a href="{{ url_for('weather.weather_view') }}" class="{{ 'active' if request.endpoint == 'weather.weather_view' }}">
-      <i class="bi bi-cloud-lightning-rain"></i> Weather
-    </a>
-    <a href="{{ url_for('report.report_view') }}"   class="{{ 'active' if request.endpoint == 'report.report_view' }}">
-      <i class="bi bi-exclamation-triangle"></i> Report Incident
-    </a>
-    <a href="{{ url_for('emergency.emergency_view') }}" class="{{ 'active' if request.endpoint == 'emergency.emergency_view' }}">
-      <i class="bi bi-telephone-outbound"></i> Emergency Help
-    </a>
-  </div>
-
-  <div class="sidebar-footer">
-    <div>⏱ AUTO-REFRESH: 5s</div>
-    <div id="last-update">LAST SYNC: --:--:--</div>
-    <div style="margin-top:6px;">Kerala, India 🌏</div>
-  </div>
+<!-- MOBILE NAV -->
+<nav class="mob-nav" id="mob-nav">
+  <a href="{{ url_for('dashboard.index') }}"          class="{{ 'active' if request.endpoint=='dashboard.index' }}"><i class="bi bi-grid-3x3-gap"></i> Dashboard</a>
+  <a href="{{ url_for('map_view.map_view') }}"        class="{{ 'active' if request.endpoint=='map_view.map_view' }}"><i class="bi bi-map"></i> Live Map</a>
+  <a href="{{ url_for('weather.weather_view') }}"     class="{{ 'active' if request.endpoint=='weather.weather_view' }}"><i class="bi bi-cloud-rain"></i> Weather</a>
+  <a href="{{ url_for('report.report_view') }}"       class="{{ 'active' if request.endpoint=='report.report_view' }}"><i class="bi bi-exclamation-triangle"></i> Report Incident</a>
+  <a href="{{ url_for('emergency.emergency_view') }}" class="{{ 'active' if request.endpoint=='emergency.emergency_view' }}"><i class="bi bi-telephone"></i> Emergency Help</a>
 </nav>
 
-<!-- Main -->
-<div class="main-content">
-  <div class="topbar">
-    <div class="d-flex align-items-center gap-3">
-      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
-      <h2>{% block page_title %}Dashboard{% endblock %}</h2>
+<!-- MAIN -->
+<div class="page-wrap">
+  <div class="page-inner">
+    <div class="pg-head">
+      <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+      <span class="pg-meta" id="last-sync">Awaiting data...</span>
     </div>
-    <div class="d-flex align-items-center gap-3">
-      <div class="live-badge">
-        <span class="pulse-dot"></span> LIVE DATA
-      </div>
-      <span class="text-mono" style="font-size:.75rem;color:var(--text-muted)" id="clock"></span>
-    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat,msg in messages %}
+        <div class="flash flash-{{cat}}">
+          <i class="bi bi-{% if cat=='success' %}check-circle{% else %}x-circle{% endif %}"></i>{{msg}}
+        </div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
   </div>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for cat, msg in messages %}
-        <div class="alert alert-{{ cat }} alert-ews alert-dismissible fade show mb-3" role="alert">
-          {{ msg }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  {% block content %}{% endblock %}
+  <footer class="site-footer">
+    <span>Kerala State Disaster Management Authority · LandslideWatch EWS v2.0</span>
+    <span style="font-family:var(--mono);font-size:11px" id="ftr-coords"></span>
+  </footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-  }
-  // Clock
-  (function tick() {
-    const el = document.getElementById('clock');
-    if (el) el.textContent = new Date().toLocaleTimeString();
+  (function tick(){
+    const t = new Date();
+    const s = t.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + '  ' + t.toLocaleTimeString('en-GB');
+    const el = document.getElementById('hdr-clock');
+    if(el) el.textContent = s;
     setTimeout(tick, 1000);
   })();
+
+  function toggleMob(){
+    document.getElementById('mob-nav').classList.toggle('open');
+  }
+  document.addEventListener('click', e => {
+    if(!e.target.closest('.mob-btn') && !e.target.closest('.mob-nav'))
+      document.getElementById('mob-nav')?.classList.remove('open');
+  });
 </script>
 {% block extra_js %}{% endblock %}
 </body>
