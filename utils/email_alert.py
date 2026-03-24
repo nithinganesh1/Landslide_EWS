@@ -18,23 +18,26 @@ def send_alert_email(vibration, soil):
         print("ERROR: EMAIL_APP_PASSWORD not set")
         return
     
-    # Determine alert type
+    # Determine alert type and vibration message
     if vibration == 1:
         subject = "⚠ CRITICAL: Vibration Detected - Landslide Alert"
         alert_type = "VIBRATION DETECTED"
+        vibration_msg = "Vibration is VERY HIGH"
     elif soil > soil_threshold:
         subject = "⚠ WARNING: High Soil Moisture - Landslide Risk"
         alert_type = "HIGH SOIL MOISTURE"
+        vibration_msg = "Vibration: Normal"
     else:
         subject = "⚠ Landslide Warning Detected"
         alert_type = "SENSOR ALERT"
+        vibration_msg = "Vibration: Normal"
     
     body = f"""
 Landslide Early Warning System Alert
 
 Alert Type    : {alert_type}
 Soil Moisture : {soil}% (Threshold: {soil_threshold}%)
-Vibration     : {vibration}
+{vibration_msg}
 
 Please take precautions immediately.
 """
