@@ -24,3 +24,15 @@ class Config:
     RISK_HIGH_TILT = 15
     RISK_WARN_SOIL = 50
     RISK_WARN_TILT = 8
+
+    # ── Email Alerts ───────────────────────────────────────────
+    EMAIL_SENDER = "joelproject72@gmail.com"
+    EMAIL_APP_PASSWORD = "znyl suvj lacd vhxn"  # Gmail app password
+    EMAIL_RECIPIENTS = [
+        "joelmba2012@gmail.com",
+        "sainulabidhka.mec@gmail.com",
+        "anupama.viswa@gmail.com",
+        "amrithasunil4002@gmail.com"
+    ]
+    SMTP_SERVER = "smtp.gmail.com"
+    SMTP_PORT = 587

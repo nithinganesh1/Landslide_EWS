@@ -1,47 +1,59 @@
 import smtplib
 from email.mime.text import MIMEText
+from config import Config
 
-# sender gmail
-EMAIL = "joelproject72@gmail.com"
-APP_PASSWORD = "hyyj zgaz pvjn jvqu"
-
-# receiver email (where alert should go)
-RECEIVER_EMAIL = "yourdestination@gmail.com"
-
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+SMTP_SERVER = Config.SMTP_SERVER
+SMTP_PORT = Config.SMTP_PORT
 
 
 def send_alert_email(vibration, soil):
-
-    subject = "⚠ Landslide Warning Detected"
-
+    """Send alert email for vibration or high soil moisture."""
+    
+    email_sender = Config.EMAIL_SENDER
+    app_password = Config.EMAIL_APP_PASSWORD
+    recipients = Config.EMAIL_RECIPIENTS
+    soil_threshold = Config.RISK_HIGH_SOIL
+    
+    if not app_password:
+        print("ERROR: EMAIL_APP_PASSWORD not set")
+        return
+    
+    # Determine alert type
+    if vibration == 1:
+        subject = "⚠ CRITICAL: Vibration Detected - Landslide Alert"
+        alert_type = "VIBRATION DETECTED"
+    elif soil > soil_threshold:
+        subject = "⚠ WARNING: High Soil Moisture - Landslide Risk"
+        alert_type = "HIGH SOIL MOISTURE"
+    else:
+        subject = "⚠ Landslide Warning Detected"
+        alert_type = "SENSOR ALERT"
+    
     body = f"""
 Landslide Early Warning System Alert
 
-Danger detected.
-
-Soil Moisture : {soil}
+Alert Type    : {alert_type}
+Soil Moisture : {soil}% (Threshold: {soil_threshold}%)
 Vibration     : {vibration}
 
 Please take precautions immediately.
 """
-
+    
     msg = MIMEText(body)
     msg["Subject"] = subject
-    msg["From"] = EMAIL
-    msg["To"] = RECEIVER_EMAIL
-
+    msg["From"] = email_sender
+    msg["To"] = ", ".join([r.strip() for r in recipients])
+    
     try:
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
-        server.login(EMAIL, APP_PASSWORD)
-
-        server.sendmail(EMAIL, RECEIVER_EMAIL, msg.as_string())
-
+        server.login(email_sender, app_password)
+        
+        # Send to all recipients
+        server.sendmail(email_sender, recipients, msg.as_string())
         server.quit()
-
-        print("Email alert sent")
-
+        
+        print(f"✓ Email alert sent ({alert_type}) to {len(recipients)} recipients")
+        
     except Exception as e:
-        print("Email error:", e)
+        print(f"✗ Email error: {e}")

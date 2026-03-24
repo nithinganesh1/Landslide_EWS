@@ -6,6 +6,7 @@ Matches the ESP8266 Firebase setup: test_mode=true, API key auth.
 import requests
 import time
 import logging
+import threading
 from config import Config
 
 log = logging.getLogger(__name__)
@@ -19,6 +20,11 @@ BASE = _raw.rstrip("/")
 API_KEY = Config.FIREBASE_API_KEY   # appended as ?auth= for REST writes
 
 _CONFIGURED = "your-project" not in BASE and BASE != "https://"
+
+# Real-time listener callback
+_listener_callback = None
+_last_vibration = 0
+_last_soil = 0
 
 
 def _auth_params():
@@ -40,6 +46,51 @@ def get_sensor_data() -> dict:
     except Exception as e:
         log.warning("get_sensor_data failed: %s — using mock data", e)
         return _mock_data()
+
+
+def set_listener_callback(callback):
+    """Register callback function to be called when vibration changes to 1."""
+    global _listener_callback
+    _listener_callback = callback
+
+
+def start_realtime_listener():
+    """Start real-time listener for vibration & soil moisture alerts."""
+    from config import Config
+    
+    def listen():
+        global _last_vibration, _last_soil
+        soil_threshold = Config.RISK_HIGH_SOIL
+        
+        while True:
+            try:
+                data = get_sensor_data()
+                vibration = int(data.get("Vibration", 0))
+                soil = float(data.get("SoilMoisture", 0))
+                
+                # Alert 1: Vibration changes to 1
+                if vibration == 1 and _last_vibration == 0:
+                    if _listener_callback:
+                        log.info(f"✓ Vibration triggered! Soil: {soil}, Vibration: {vibration}")
+                        _listener_callback(vibration, soil)
+                
+                # Alert 2: Soil moisture exceeds threshold
+                if soil > soil_threshold and _last_soil <= soil_threshold:
+                    if _listener_callback:
+                        log.info(f"✓ High soil moisture detected! Soil: {soil} (Threshold: {soil_threshold})")
+                        _listener_callback(vibration, soil)
+                
+                _last_vibration = vibration
+                _last_soil = soil
+                time.sleep(2)  # Check every 2 seconds
+                
+            except Exception as e:
+                log.error(f"Listener error: {e}")
+                time.sleep(5)
+    
+    thread = threading.Thread(target=listen, daemon=True)
+    thread.start()
+    return thread
 
 
 def push_report(report: dict) -> tuple[bool, str]:

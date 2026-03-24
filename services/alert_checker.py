@@ -13,8 +13,8 @@ def check_alert():
 
     print("Soil:", soil, "Vibration:", vibration)
 
-    if soil > SOIL_THRESHOLD and vibration == 1:
-        print("ALERT CONDITION TRUE")
+    if vibration == 1:
+        print("VIBRATION DETECTED - SENDING ALERT")
         send_alert_email(vibration, soil)
     else:
-        print("No danger condition")
+        print("No vibration detected")

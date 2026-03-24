@@ -1,5 +1,7 @@
 import logging
 from flask import Flask
+from utils.firebase_client import start_realtime_listener, set_listener_callback
+from utils.email_alert import send_alert_email
 from routes.dashboard import dashboard_bp
 from routes.map_view import map_bp
 from routes.weather import weather_bp
@@ -22,6 +24,11 @@ def create_app():
     app.register_blueprint(report_bp,    url_prefix="/report")
     app.register_blueprint(emergency_bp, url_prefix="/emergency")
     app.register_blueprint(api_bp,       url_prefix="/api")
+
+    # Start real-time Firebase listener
+    set_listener_callback(send_alert_email)
+    start_realtime_listener()
+    print("✓ Real-time alert listener started - emails send INSTANTLY when vibration=1")
 
     return app
 
